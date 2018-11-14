@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <com.hold1.swipeactions.SwipeActionsView
+        app:swStartAlpha="0.5"
+        app:swStartScale="0.85"
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="#ff00ff"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:swReveal="end">
+
+            <Button
+                android:id="@+id/testBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="testBtn" />
+        </LinearLayout>
+
+        <FrameLayout
+            app:swReveal="start"
+            android:layout_width="100dp"
+            android:background="#ff00ff"
+            android:layout_height="match_parent"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorPrimaryDark" />
+    </com.hold1.swipeactions.SwipeActionsView>
+</android.support.constraint.ConstraintLayout>

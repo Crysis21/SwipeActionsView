@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SwipeActionsView">
+        <attr name="swStartAlpha" format="float" />
+        <attr name="swStartScale" format="float" />
+    </declare-styleable>
+    <declare-styleable name="SwipeActionsView_Layout">
+        <attr name="swReveal">
+            <enum name="start" value="0" />
+            <enum name="end" value="1" />
+        </attr>
+    </declare-styleable>
+</resources>
