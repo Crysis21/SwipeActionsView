@@ -3,6 +3,9 @@
     <declare-styleable name="SwipeActionsView">
         <attr name="swStartAlpha" format="float" />
         <attr name="swStartScale" format="float" />
+        <attr name="swDisableParentClipping" format="boolean" />
+        <attr name="swElevation" format="dimension" />
+        <attr name="swCornerRadius" format="dimension" />
     </declare-styleable>
     <declare-styleable name="SwipeActionsView_Layout">
         <attr name="swReveal">

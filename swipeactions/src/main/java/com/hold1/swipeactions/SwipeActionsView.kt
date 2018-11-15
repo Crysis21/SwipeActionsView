@@ -3,10 +3,14 @@ package com.hold1.swipeactions
 import android.animation.Animator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.content.Context
+import android.graphics.Outline
+import android.os.Build
 import android.support.annotation.IntDef
 import android.support.annotation.NonNull
 import android.support.annotation.Nullable
+import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.*
 import android.widget.FrameLayout
@@ -50,7 +54,13 @@ class SwipeActionsView @JvmOverloads constructor(
     private var startAlpha = 1.0f
     private var startScale = 1.0f
 
-    private var viewInSlideMode = true
+    private var viewInSlideMode = false
+    private var disableParentClipping = false
+
+    var cornerRadius = 0
+    var elevation = 0
+
+    private var outlineProvider = CustomOutline()
 
     @OpenState
     var openState: Int = STATE_CLOSED
@@ -67,6 +77,9 @@ class SwipeActionsView @JvmOverloads constructor(
         val a = context.obtainStyledAttributes(attrs, R.styleable.SwipeActionsView)
         startAlpha = a.getFloat(R.styleable.SwipeActionsView_swStartAlpha, startAlpha)
         startScale = a.getFloat(R.styleable.SwipeActionsView_swStartScale, startScale)
+        disableParentClipping = a.getBoolean(R.styleable.SwipeActionsView_swDisableParentClipping, false)
+        cornerRadius = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swCornerRadius, 0)
+        elevation = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swElevation, 0)
         a.recycle()
     }
 
@@ -83,13 +96,41 @@ class SwipeActionsView @JvmOverloads constructor(
             } else {
                 child.visibility = View.GONE
             }
+
+            startReveal?.let { view ->
+                view.setPadding(view.left, view.top, view.right + 2 * cornerRadius, view.bottom)
+            }
+            endReveal?.let { view ->
+                view.setPadding(view.left + 2 * cornerRadius, view.top, view.right, view.bottom)
+            }
         }
+
+        mainView?.let {
+            ViewCompat.setElevation(it, elevation.toFloat())
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (cornerRadius > 0) {
+                mainView?.outlineProvider = outlineProvider
+                startReveal?.outlineProvider = outlineProvider
+                endReveal?.outlineProvider = outlineProvider
+            }
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (disableParentClipping)
+            (parent as? ViewGroup)?.clipChildren = false
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        startMoveDistance = startReveal?.measuredWidth ?: 0
-        endMoveDistance = endReveal?.measuredWidth ?: 0
+        startReveal?.let {
+            startMoveDistance = it.measuredWidth - 2 * cornerRadius
+        }
+        endReveal?.let {
+            endMoveDistance = it.measuredWidth - 2 * cornerRadius
+        }
 
         Timber.d("startDistance=$startMoveDistance endDistance=$endMoveDistance")
     }
@@ -112,7 +153,7 @@ class SwipeActionsView @JvmOverloads constructor(
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Timber.d("action ${event?.action}")
+        Timber.d("onTouchEvent action ${event?.action}")
         if (gestureDetector.onTouchEvent(event)) return true
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -158,6 +199,15 @@ class SwipeActionsView @JvmOverloads constructor(
             }
         }
         return false
+    }
+
+    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+        return true
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        Timber.d("dispatchTouchEvent action ${ev?.action}")
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun applyMovement(move: Float) {
@@ -208,14 +258,15 @@ class SwipeActionsView @JvmOverloads constructor(
             STATE_OPEN_END -> {
                 startValue = mainView?.translationX ?: 0F
                 endValue = -endMoveDistance.toFloat()
-                animDuration = (abs(startValue) / abs(endValue) * animDuration).toInt()
+                animDuration = (abs(startValue) / endMoveDistance * animDuration).toInt()
             }
             STATE_OPEN_START -> {
                 startValue = mainView?.translationX ?: 0F
                 endValue = startMoveDistance.toFloat()
-                animDuration = (abs(startValue) / endValue * animDuration).toInt()
+                animDuration = (abs(startValue) / startMoveDistance * animDuration).toInt()
             }
         }
+        animator?.cancel()
         animator.setFloatValues(startValue, endValue)
         animator.duration = animDuration.toLong()
         animator.start()
@@ -229,7 +280,7 @@ class SwipeActionsView @JvmOverloads constructor(
     override fun onDown(e: MotionEvent?): Boolean = false
 
     override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-        Timber.d("fling it")
+        Timber.d("fling it $velocityX $velocityY")
         if (abs(velocityX) > abs(velocityY)) {
             if (abs(velocityX) > 600) {
                 if (velocityX < 0) {
@@ -303,6 +354,15 @@ class SwipeActionsView @JvmOverloads constructor(
         }
 
         constructor(params: SwipeRevealLayoutParams) : super(params)
+    }
+
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private inner class CustomOutline internal constructor() : ViewOutlineProvider() {
+        override fun getOutline(view: View, outline: Outline) {
+            outline.setRoundRect(0, 0, view.width, view.height, cornerRadius.toFloat())
+            view.clipToOutline = true
+        }
     }
 
     companion object {

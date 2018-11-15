@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,10 +7,14 @@
     tools:context=".MainActivity">
 
     <com.hold1.swipeactions.SwipeActionsView
-        app:swStartAlpha="0.5"
-        app:swStartScale="0.85"
         android:layout_width="match_parent"
-        android:layout_height="200dp">
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:swCornerRadius="10dp"
+        app:swDisableParentClipping="true"
+        app:swStartAlpha="0.5"
+        app:swElevation="10dp"
+        app:swStartScale="0.85">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -28,14 +32,14 @@
         </LinearLayout>
 
         <FrameLayout
-            app:swReveal="start"
             android:layout_width="100dp"
+            android:layout_height="match_parent"
             android:background="#ff00ff"
-            android:layout_height="match_parent"/>
+            app:swReveal="start" />
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="100dp"
             android:background="@color/colorPrimaryDark" />
     </com.hold1.swipeactions.SwipeActionsView>
-</android.support.constraint.ConstraintLayout>
+</LinearLayout>
