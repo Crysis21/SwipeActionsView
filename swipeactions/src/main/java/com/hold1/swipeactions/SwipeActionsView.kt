@@ -25,10 +25,11 @@ import kotlin.math.sign
  * Created by Cristian Holdunu on 14/11/2018.
  */
 class SwipeActionsView @JvmOverloads constructor(
-        context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : FrameLayout(context, attrs, defStyleAttr),
-        GestureDetector.OnGestureListener,
-        Animator.AnimatorListener,
-        ValueAnimator.AnimatorUpdateListener {
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : FrameLayout(context, attrs, defStyleAttr),
+    GestureDetector.OnGestureListener,
+    Animator.AnimatorListener,
+    ValueAnimator.AnimatorUpdateListener {
 
     @IntDef(REVEAL_NONE, REVEAL_START, REVEAL_END)
     @Retention(AnnotationRetention.SOURCE)
@@ -48,6 +49,10 @@ class SwipeActionsView @JvmOverloads constructor(
     private var touchY = 0F
     private var moveX = 0F
 
+    //Used to detect event handling. WIP
+    private var dragDist = 0F
+    private var dragTouchX = 0F
+
     private var startMoveDistance = 0
     private var endMoveDistance = 0
 
@@ -59,6 +64,8 @@ class SwipeActionsView @JvmOverloads constructor(
 
     var cornerRadius = 0
     var elevation = 0
+
+    var lockDrag = false
 
     private var outlineProvider = CustomOutline()
 
@@ -202,7 +209,27 @@ class SwipeActionsView @JvmOverloads constructor(
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        return true
+        if (lockDrag) {
+            return super.onInterceptTouchEvent(ev)
+        }
+        addDragDistance(ev)
+        val touchDragableArea =
+            ViewGroupUtils.isPointInChildBounds(this, mainView, ev?.x?.toInt() ?: 0, ev?.y?.toInt() ?: 0)
+        val canBeClick = touchDragableArea && (dragDist < ViewConfiguration.get(context).scaledTouchSlop)
+        return touchDragableArea && canBeClick
+    }
+
+
+    private fun addDragDistance(event: MotionEvent?) {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                dragDist = 0F
+                dragTouchX = event.x
+            }
+            MotionEvent.ACTION_MOVE -> {
+                dragDist = abs(event.x - dragTouchX)
+            }
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
