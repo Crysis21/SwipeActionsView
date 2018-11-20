@@ -14,8 +14,9 @@
         app:swCornerRadius="10dp"
         app:swElevation="10dp"
         app:swStartAlpha="0.5"
-        app:swStartScale="0.85">
-
+        app:swStartScale="0.85"
+        app:swStructure="linear">
+        
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -25,7 +26,7 @@
             app:swReveal="end">
 
             <Button
-                android:id="@+id/testBtn"
+                android:id="@+id/test"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="testBtn" />
@@ -46,6 +47,6 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/swipeFeed"
         android:layout_width="match_parent"
-        android:background="@color/colorAccent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="@color/colorAccent" />
 </LinearLayout>

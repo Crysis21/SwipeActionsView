@@ -6,6 +6,10 @@
         <attr name="swDisableParentClipping" format="boolean" />
         <attr name="swElevation" format="dimension" />
         <attr name="swCornerRadius" format="dimension" />
+        <attr name="swStructure">
+            <enum name="stack" value="0" />
+            <enum name="linear" value="1" />
+        </attr>
     </declare-styleable>
     <declare-styleable name="SwipeActionsView_Layout">
         <attr name="swReveal">

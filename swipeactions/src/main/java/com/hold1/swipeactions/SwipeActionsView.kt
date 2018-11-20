@@ -31,10 +31,6 @@ class SwipeActionsView @JvmOverloads constructor(
         Animator.AnimatorListener,
         ValueAnimator.AnimatorUpdateListener {
 
-    @IntDef(REVEAL_NONE, REVEAL_START, REVEAL_END)
-    @Retention(AnnotationRetention.SOURCE)
-    private annotation class RevealMode {}
-
     @IntDef(STATE_CLOSED, STATE_OPEN_START, STATE_OPEN_END)
     @Retention(AnnotationRetention.SOURCE)
     annotation class OpenState {}
@@ -65,13 +61,13 @@ class SwipeActionsView @JvmOverloads constructor(
     var cornerRadius = 0
     var elevation = 0
 
-    var lockDrag = false
-
     private var outlineProvider = CustomOutline()
 
     @OpenState
     var openState: Int = STATE_CLOSED
         private set
+
+    private var structure: Int = STRUCTURE_STACK
 
     init {
         if (BuildConfig.DEBUG) {
@@ -87,6 +83,7 @@ class SwipeActionsView @JvmOverloads constructor(
         disableParentClipping = a.getBoolean(R.styleable.SwipeActionsView_swDisableParentClipping, false)
         cornerRadius = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swCornerRadius, 0)
         elevation = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swElevation, 0)
+        structure = a.getInt(R.styleable.SwipeActionsView_swStructure, STRUCTURE_STACK)
         a.recycle()
 
         clipToPadding = false
@@ -96,9 +93,9 @@ class SwipeActionsView @JvmOverloads constructor(
         super.onFinishInflate()
         for (i in 0 until childCount) {
             val child = getChildAt(i)
-            if ((child.layoutParams as SwipeRevealLayoutParams).revealMode == Companion.REVEAL_START) {
+            if ((child.layoutParams as SwipeRevealLayoutParams).revealMode == REVEAL_START) {
                 startReveal = child
-            } else if ((child.layoutParams as SwipeRevealLayoutParams).revealMode == Companion.REVEAL_END) {
+            } else if ((child.layoutParams as SwipeRevealLayoutParams).revealMode == REVEAL_END) {
                 endReveal = child
             } else if (i == childCount - 1) {
                 mainView = child
@@ -159,6 +156,12 @@ class SwipeActionsView @JvmOverloads constructor(
 
         startReveal?.alpha = startAlpha
         endReveal?.alpha = startAlpha
+
+        if (structure == STRUCTURE_LINEAR) {
+            //We need to translate the views outside original viewport
+            startReveal?.translationX = (-startMoveDistance).toFloat()
+            endReveal?.translationX = endMoveDistance.toFloat()
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -199,8 +202,10 @@ class SwipeActionsView @JvmOverloads constructor(
         }
         addDragDistance(ev)
         val touchDraggableArea =
-                ViewGroupUtils.isPointInChildBounds(this, mainView, ev?.x?.toInt()
-                        ?: 0, ev?.y?.toInt() ?: 0)
+                ViewGroupUtils.isPointInChildBounds(
+                        this, mainView, ev?.x?.toInt()
+                        ?: 0, ev?.y?.toInt() ?: 0
+                )
         val canBeClick = touchDraggableArea && (dragDist < ViewConfiguration.get(context).scaledTouchSlop)
         return touchDraggableArea && canBeClick
     }
@@ -264,11 +269,17 @@ class SwipeActionsView @JvmOverloads constructor(
 
     private fun applyTranslationInner(translation: Float) {
         mainView?.translationX = translation
+
+        if (structure == STRUCTURE_LINEAR) {
+            endReveal?.translationX = endMoveDistance + translation
+            startReveal?.translationX = - startMoveDistance + translation
+        }
         if (translation < 0) {
             val percentage = abs(translation) / endMoveDistance.toFloat()
             endReveal?.alpha = startAlpha + (1f - startAlpha) * percentage
             endReveal?.scaleX = startScale + (1f - startScale) * percentage
             endReveal?.scaleY = startScale + (1f - startScale) * percentage
+
         } else {
             val percentage = translation / startMoveDistance.toFloat()
             startReveal?.alpha = startAlpha + (1f - startAlpha) * percentage
@@ -277,8 +288,8 @@ class SwipeActionsView @JvmOverloads constructor(
         }
     }
 
-    private fun setState(@OpenState state: Int) {
-        var animDuration = ANIM_DURATION
+    fun setState(@OpenState state: Int, animDuration: Int = ANIM_DURATION) {
+        var duration = animDuration
         var startValue: Float = 0F
         var endValue: Float = 0F
         when (state) {
@@ -286,25 +297,25 @@ class SwipeActionsView @JvmOverloads constructor(
                 startValue = mainView?.translationX ?: 0F
                 endValue = 0F
                 if (startValue > 0) {
-                    animDuration = (startValue / startMoveDistance.toFloat() * animDuration).toInt()
+                    duration = (startValue / startMoveDistance.toFloat() * duration).toInt()
                 } else {
-                    animDuration = ((abs(startValue) / endMoveDistance.toFloat()) * animDuration).toInt()
+                    duration = ((abs(startValue) / endMoveDistance.toFloat()) * duration).toInt()
                 }
             }
             STATE_OPEN_END -> {
                 startValue = mainView?.translationX ?: 0F
                 endValue = -endMoveDistance.toFloat()
-                animDuration = (abs(startValue) / endMoveDistance * animDuration).toInt()
+                duration = (abs(startValue) / endMoveDistance * duration).toInt()
             }
             STATE_OPEN_START -> {
                 startValue = mainView?.translationX ?: 0F
                 endValue = startMoveDistance.toFloat()
-                animDuration = (abs(startValue) / startMoveDistance * animDuration).toInt()
+                duration = (abs(startValue) / startMoveDistance * duration).toInt()
             }
         }
         animator?.cancel()
         animator.setFloatValues(startValue, endValue)
-        animator.duration = animDuration.toLong()
+        animator.duration = duration.toLong()
         animator.start()
         this.openState = state
     }
@@ -346,14 +357,11 @@ class SwipeActionsView @JvmOverloads constructor(
         applyTranslationInner(translation)
     }
 
-    override fun onAnimationEnd(animation: Animator?) {
-    }
+    override fun onAnimationEnd(animation: Animator?) = Unit
 
-    override fun onAnimationStart(animation: Animator?) {
-    }
+    override fun onAnimationStart(animation: Animator?) = Unit
 
-    override fun onAnimationRepeat(animation: Animator?) {
-    }
+    override fun onAnimationRepeat(animation: Animator?) = Unit
 
     override fun onAnimationCancel(animation: Animator?) {
         when (openState) {
@@ -408,6 +416,8 @@ class SwipeActionsView @JvmOverloads constructor(
         const val REVEAL_END = 1
         const val REVEAL_NONE = -1
         const val REVEAL_START = 0
-        private val ANIM_DURATION = 240
+        const val STRUCTURE_STACK = 0
+        const val STRUCTURE_LINEAR = 1
+        private const val ANIM_DURATION = 240
     }
 }
