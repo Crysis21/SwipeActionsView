@@ -25,11 +25,11 @@ import kotlin.math.sign
  * Created by Cristian Holdunu on 14/11/2018.
  */
 class SwipeActionsView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+        context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr),
-    GestureDetector.OnGestureListener,
-    Animator.AnimatorListener,
-    ValueAnimator.AnimatorUpdateListener {
+        GestureDetector.OnGestureListener,
+        Animator.AnimatorListener,
+        ValueAnimator.AnimatorUpdateListener {
 
     @IntDef(REVEAL_NONE, REVEAL_START, REVEAL_END)
     @Retention(AnnotationRetention.SOURCE)
@@ -88,6 +88,8 @@ class SwipeActionsView @JvmOverloads constructor(
         cornerRadius = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swCornerRadius, 0)
         elevation = a.getDimensionPixelSize(R.styleable.SwipeActionsView_swElevation, 0)
         a.recycle()
+
+        clipToPadding = false
     }
 
     override fun onFinishInflate() {
@@ -115,6 +117,7 @@ class SwipeActionsView @JvmOverloads constructor(
         mainView?.let {
             ViewCompat.setElevation(it, elevation.toFloat())
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (cornerRadius > 0) {
                 mainView?.outlineProvider = outlineProvider
@@ -171,7 +174,7 @@ class SwipeActionsView @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 moveX = event.x - touchX
                 if (abs(moveX) > ViewConfiguration.get(context).scaledTouchSlop) {
-                    viewInSlideMode = true
+                    startTracking()
                 }
                 if (viewInSlideMode) {
                     moveX = event.x - touchX
@@ -183,25 +186,7 @@ class SwipeActionsView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
-                //Trigger animation
-                viewInSlideMode = false
-
-                //Set the final state
-                val currentTranslation = mainView?.translationX ?: 0F
-                if (currentTranslation > 0) {
-                    if (currentTranslation > startMoveDistance / 2) {
-                        setState(STATE_OPEN_START)
-                    } else {
-                        setState(STATE_CLOSED)
-                    }
-                } else {
-                    if (abs(currentTranslation) > endMoveDistance / 2) {
-                        setState(STATE_OPEN_END)
-                    } else {
-                        setState(STATE_CLOSED)
-                    }
-                }
-
+                stopTracking()
                 return true
             }
         }
@@ -209,16 +194,16 @@ class SwipeActionsView @JvmOverloads constructor(
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        if (lockDrag) {
-            return super.onInterceptTouchEvent(ev)
+        if (!isEnabled) {
+            return false
         }
         addDragDistance(ev)
-        val touchDragableArea =
-            ViewGroupUtils.isPointInChildBounds(this, mainView, ev?.x?.toInt() ?: 0, ev?.y?.toInt() ?: 0)
-        val canBeClick = touchDragableArea && (dragDist < ViewConfiguration.get(context).scaledTouchSlop)
-        return touchDragableArea && canBeClick
+        val touchDraggableArea =
+                ViewGroupUtils.isPointInChildBounds(this, mainView, ev?.x?.toInt()
+                        ?: 0, ev?.y?.toInt() ?: 0)
+        val canBeClick = touchDraggableArea && (dragDist < ViewConfiguration.get(context).scaledTouchSlop)
+        return touchDraggableArea && canBeClick
     }
-
 
     private fun addDragDistance(event: MotionEvent?) {
         when (event?.action) {
@@ -232,9 +217,33 @@ class SwipeActionsView @JvmOverloads constructor(
         }
     }
 
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        Timber.d("dispatchTouchEvent action ${ev?.action}")
-        return super.dispatchTouchEvent(ev)
+    private fun startTracking() {
+        viewInSlideMode = true
+        attemptClaimDrag()
+    }
+
+    private fun attemptClaimDrag() {
+        parent?.requestDisallowInterceptTouchEvent(true)
+    }
+
+    private fun stopTracking() {
+        viewInSlideMode = false
+
+        //Set the final state
+        val currentTranslation = mainView?.translationX ?: 0F
+        if (currentTranslation > 0) {
+            if (currentTranslation > startMoveDistance / 2 - cornerRadius) {
+                setState(STATE_OPEN_START)
+            } else {
+                setState(STATE_CLOSED)
+            }
+        } else {
+            if (abs(currentTranslation) > endMoveDistance / 2 - cornerRadius) {
+                setState(STATE_OPEN_END)
+            } else {
+                setState(STATE_CLOSED)
+            }
+        }
     }
 
     private fun applyMovement(move: Float) {

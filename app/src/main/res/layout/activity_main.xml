@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
     <com.hold1.swipeactions.SwipeActionsView
@@ -11,9 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         app:swCornerRadius="10dp"
-        app:swDisableParentClipping="true"
-        app:swStartAlpha="0.5"
         app:swElevation="10dp"
+        app:swStartAlpha="0.5"
         app:swStartScale="0.85">
 
         <LinearLayout
@@ -42,4 +42,10 @@
             android:layout_height="100dp"
             android:background="@color/colorPrimaryDark" />
     </com.hold1.swipeactions.SwipeActionsView>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/swipeFeed"
+        android:layout_width="match_parent"
+        android:background="@color/colorAccent"
+        android:layout_height="match_parent" />
 </LinearLayout>
