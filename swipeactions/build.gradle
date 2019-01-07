@@ -27,7 +27,7 @@ ext {
 
 group = publishedGroupId
 project.archivesBaseName = 'swipeactionsview'
-version = '0.0.3'
+version = '0.0.7'
 
 
 buildscript {

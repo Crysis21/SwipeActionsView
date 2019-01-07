@@ -16,7 +16,7 @@
         app:swStartAlpha="0.5"
         app:swStartScale="0.85"
         app:swStructure="linear">
-        
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -39,14 +39,21 @@
             app:swReveal="start" />
 
         <FrameLayout
+            android:id="@+id/contentView"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:background="@color/colorPrimaryDark" />
+            android:background="@color/colorPrimaryDark">
+
+            <Button
+                android:id="@+id/magicButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Magic Button" />
+        </FrameLayout>
     </com.hold1.swipeactions.SwipeActionsView>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/swipeFeed"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/colorAccent" />
+        android:layout_height="match_parent" />
 </LinearLayout>

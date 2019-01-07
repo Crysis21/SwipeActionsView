@@ -25,11 +25,11 @@ import kotlin.math.sign
  * Created by Cristian Holdunu on 14/11/2018.
  */
 class SwipeActionsView @JvmOverloads constructor(
-        context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr),
-        GestureDetector.OnGestureListener,
-        Animator.AnimatorListener,
-        ValueAnimator.AnimatorUpdateListener {
+    GestureDetector.OnGestureListener,
+    Animator.AnimatorListener,
+    ValueAnimator.AnimatorUpdateListener {
 
     @IntDef(STATE_CLOSED, STATE_OPEN_START, STATE_OPEN_END)
     @Retention(AnnotationRetention.SOURCE)
@@ -42,7 +42,6 @@ class SwipeActionsView @JvmOverloads constructor(
     private var mainView: View? = null
 
     private var touchX = 0F
-    private var touchY = 0F
     private var moveX = 0F
 
     //Used to detect event handling. WIP
@@ -171,18 +170,20 @@ class SwipeActionsView @JvmOverloads constructor(
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
                 touchX = event.x
-                touchY = event.y
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
                 moveX = event.x - touchX
                 if (abs(moveX) > ViewConfiguration.get(context).scaledTouchSlop) {
+                    if (!viewInSlideMode) {
+                        touchX = event.x
+                    }
                     startTracking()
+
                 }
                 if (viewInSlideMode) {
                     moveX = event.x - touchX
                     applyMovement(moveX)
-                    touchY = event.y
                     touchX = event.x
                 }
                 return true
@@ -200,25 +201,23 @@ class SwipeActionsView @JvmOverloads constructor(
         if (!isEnabled) {
             return false
         }
-        addDragDistance(ev)
-        val touchDraggableArea =
-                ViewGroupUtils.isPointInChildBounds(
-                        this, mainView, ev?.x?.toInt()
-                        ?: 0, ev?.y?.toInt() ?: 0
-                )
-        val canBeClick = touchDraggableArea && (dragDist < ViewConfiguration.get(context).scaledTouchSlop)
-        return touchDraggableArea && canBeClick
-    }
-
-    private fun addDragDistance(event: MotionEvent?) {
-        when (event?.action) {
+        when (ev?.action) {
             MotionEvent.ACTION_DOWN -> {
                 dragDist = 0F
-                dragTouchX = event.x
+                dragTouchX = ev.x
             }
             MotionEvent.ACTION_MOVE -> {
-                dragDist = abs(event.x - dragTouchX)
+                dragDist = abs(ev.x - dragTouchX)
             }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                dragDist = 0F
+            }
+        }
+
+        if (dragDist > ViewConfiguration.get(context).scaledTouchSlop) {
+            return true
+        } else {
+            return super.onInterceptTouchEvent(ev)
         }
     }
 
@@ -272,7 +271,7 @@ class SwipeActionsView @JvmOverloads constructor(
 
         if (structure == STRUCTURE_LINEAR) {
             endReveal?.translationX = endMoveDistance + translation
-            startReveal?.translationX = - startMoveDistance + translation
+            startReveal?.translationX = -startMoveDistance + translation
         }
         if (translation < 0) {
             val percentage = abs(translation) / endMoveDistance.toFloat()
